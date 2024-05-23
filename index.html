@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart sef</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-image: linear-gradient(109.6deg, rgba(255, 179, 189, 1) 1.8%, rgba(254, 248, 154, 1) 50.6%, rgba(161, 224, 186, 1) 100.3%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      width: 500px;
+      margin: -50px auto 0;
+      text-align: center;
+      padding: 40px;
+      background-color: rgba(255, 255, 255, 0.40);
+      border-radius: 20px;
+      box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.5);
+    }
+
+    .code-container {
+      border: 2px solid rgba(0, 0, 0, 0.3);
+      border-radius: 5px;
+      padding: 10px;
+      margin-bottom: 20px;
+      width: fit-content;
+      margin: 0 auto;
+    }
+
+    #code {
+      font-size: 24px;
+    }
+
+    button {
+      margin-top: 10px;
+      margin-right: 10px;
+      padding: 15px 30px;
+      background-image: linear-gradient(to right, #25aae1, #40e495, #30dd8a, #2bb673);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      box-shadow: 0 4px 15px 0 rgba(49, 196, 190, 0.75);
+      border-radius: 20px;
+    }
+
+    button:hover {
+      background-image: linear-gradient(to right, #25aae1, #40e495, #30dd8a, #2bb673);
+      box-shadow: 0 4px 20px 0 rgba(49, 196, 190, 0.9);
+    }
+
+    #toggleButton {
+      margin-top: 50px;
+    }
+
+    #timer {
+      font-size: 20px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Generator lozinke</h1>
+    <div class="code-container" id="code-container">
+      <div id="code"></div>
+    </div>
+    <div id="timer"></div>
+    <button onclick="generateCode()">Generiraj lozinku</button>
+    <br><br><br>
+    <button id="toggleButton" onclick="AllInOne()">Otvori</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBllCwGnuoAan_qfy6kMFF10bnnUksIcLY",
+      authDomain: "smart-sef.firebaseapp.com",
+      databaseURL: "https://smart-sef-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "smart-sef",
+      storageBucket: "smart-sef.appspot.com",
+      messagingSenderId: "897918847550",
+      appId: "1:897918847550:web:044101af26c489f2f79f6f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    var enableRef = ref(db, 'Senzor/enable');
+    var button = document.getElementById("toggleButton");
+
+    onValue(enableRef, (snapshot) => {
+      button.disabled = snapshot.val() ? false : true;
+      if (snapshot.val()) {
+        clearInterval(timerInterval);
+        button.style.transition = "";
+        button.style.transform = "";
+        button.removeEventListener("mouseover", mouseOverHandler);
+        button.removeEventListener("mouseout", mouseOutHandler);
+      } else {
+        button.style.transition = "transform 898ms ease-out";
+        button.addEventListener("mouseover", mouseOverHandler);
+        button.addEventListener("mouseout", mouseOutHandler);
+      }
+    });
+
+    function mouseOverHandler() {
+      this.style.transform = "translate(60px, 15px)";
+    }
+
+    function mouseOutHandler() {
+      this.style.transform = "none";
+    }
+
+    function updateString() {
+      var novaVrijednost = document.getElementById("code").innerText;
+      update(ref(db, "Senzor/text"), {
+        pass: novaVrijednost
+      }).then(() => {
+        console.log("Podaci su uspješno ažurirani STRING podataka.");
+      }).catch((error) => {
+        console.log("Došlo je do greške prilikom ažuriranja STRING podataka: " + error.message);
+      });
+    }
+
+    function updateBoolEnable() {
+      var novaVrijednost = !enableRef;
+      update(ref(db, "Senzor"), {
+        enable: novaVrijednost
+      }).then(() => {
+        console.log("Podaci su uspješno ažurirani BOOL podatak.");
+      }).catch((error) => {
+        console.log("Došlo je do greške prilikom ažuriranja BOOL podataka: " + error.message);
+      });
+    }
+
+    function updateBoolIspravan_pass(vrijednost) {
+      var novaVrijednost = vrijednost;
+      update(ref(db, "Senzor"), {
+        ispravan_pass: novaVrijednost
+      }).then(() => {
+        console.log("Podaci su uspješno ažurirani BOOL podatak.");
+      }).catch((error) => {
+        console.log("Došlo je do greške prilikom ažuriranja BOOL podataka: " + error.message);
+      });
+    }
+
+    let isTimerActive = true;
+    let timerInterval;
+    let secondsUntilNextCode = 60;
+    var sifraa = document.getElementById("code");
+
+    window.AllInOne = function () {
+      toggleBackground();
+      toggleTimer();
+    }
+
+    window.toggleTimer = function () {
+      if (isTimerActive) {
+        clearInterval(timerInterval);
+        isTimerActive = false;
+      } else {
+        startCodeGeneration();
+        isTimerActive = true;
+      }
+    }
+
+    window.generateCode = function () {
+      const characters = '1234567890ABCD*';
+      const codeLength = 5;
+      let code = '';
+      for (let i = 0; i < codeLength; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        code += characters[randomIndex];
+      }
+      document.getElementById('code').innerText = code;
+      updateString();
+      resetTimer();
+    }
+
+    function startCodeGeneration() {
+      generateCode();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function resetTimer() {
+      secondsUntilNextCode = 60;
+      updateTimer();
+    }
+
+    function updateTimer() {
+      document.getElementById('timer').innerText = `Sljedeći kod za ${secondsUntilNextCode} sekundi.`;
+      secondsUntilNextCode--;
+      if (secondsUntilNextCode < 0) {
+        clearInterval(timerInterval);
+        startCodeGeneration();
+      }
+    }
+
+    startCodeGeneration();
+
+    function toggleBackground() {
+      const body = document.body;
+      const buttons = document.getElementsByTagName('button');
+      if (body.style.backgroundImage === '') {
+        body.style.backgroundImage = 'linear-gradient(to top, #09203f 0%, #537895 100%)';
+        for (let i = 0; i < buttons.length; i++) {
+          buttons[i].style.backgroundImage = 'linear-gradient(to right, #a8caba 0%, #5d4157 100%)';
+          if (buttons[i].innerText == "Otvori") {
+            buttons[i].innerText = "Zatvori";
+          }
+          updateBoolIspravan_pass(true);
+        }
+      } else {
+        body.style.backgroundImage = '';
+        for (let i = 0; i < buttons.length; i++) {
+          buttons[i].style.backgroundImage = 'linear-gradient(to right, #25aae1, #40e495, #30dd8a, #2bb673)';
+          if (buttons[i].innerText == "Zatvori") {
+            buttons[i].innerText = "Otvori";
+            updateBoolEnable();
+            updateBoolIspravan_pass(false);
+          }
+        }
+      }
+    }
+  </script>
+</body>
+
+</html>
