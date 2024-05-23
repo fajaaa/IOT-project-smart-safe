@@ -6,8 +6,8 @@
 #include <Servo.h>
 #include <string>
 
-#define WIFI_SSID "Plati manje"
-#define WIFI_PASSWORD "mozemoze"
+#define WIFI_SSID "NazivVaseWiFiMreze"
+#define WIFI_PASSWORD "VasaWiFiSifra"
 #define API_KEY "AIzaSyBllCwGnuoAan_qfy6kMFF10bnnUksIcLY"
 const char* DATABASE_URL = "https://smart-sef-default-rtdb.europe-west1.firebasedatabase.app/";
 
